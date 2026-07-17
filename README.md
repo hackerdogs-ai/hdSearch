@@ -4,7 +4,7 @@
 
 **One self-hosted API for search, crawl, vector search, and agentic AI answers — across 20+ engines.**
 
-hdSearch is a **search results cache** that has built-in modalities and AI Search mode. 
+hdSearch is a **search results cache** that has built-in modalities and AI Search mode. It saves you **cash**. You work hard for money, save it, don't give it away in credits and subscriptions. 
 
 A free, open-source alternative to SerpAPI + Perplexity that you run on your own
 box. Prioritized multi-engine search with fallback & dedup, a Redis cache,
