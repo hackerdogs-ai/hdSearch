@@ -204,9 +204,12 @@ services:
       # the `maps` profile (hds-photon) and set HDSEARCH_GEOCODER_URL=http://hds-photon:2322
       - HDSEARCH_GEOCODER_ENGINE=photon
       - HDSEARCH_GEOCODER_URL=${HDSEARCH_GEOCODER_URL:-}
-      # --- secrets (MUST be set in .env.selfhost; api & web must share them) ---
-      - HDSEARCH_ENCRYPTION_KEY=${HDSEARCH_ENCRYPTION_KEY}
-      - HDSEARCH_INTERNAL_SECRET=${HDSEARCH_INTERNAL_SECRET}
+      # --- secrets: NONE in env. The encryption / internal / session secrets are
+      # auto-generated on first boot and persisted to the shared `hds-secrets`
+      # volume (mounted below), so api & web agree automatically and the values
+      # survive restarts. Provider API keys are NOT set here — enter them in the UI
+      # (Account -> Provider Keys, or Admin -> Default Keys for system-wide keys).
+      - HDSEARCH_SECRETS_FILE=/secrets/hdsearch-secrets.json
       - HDSEARCH_API_PORT=8791
       # --- SaaS OFF: local/open-source mode ---
       - HDSEARCH_AUTH_MODE=legacy
@@ -220,6 +223,8 @@ services:
       - HDSEARCH_OPEN_SIGNUP=${HDSEARCH_OPEN_SIGNUP:-false}
     ports:
       - "${API_PORT:-8791}:8791"
+    volumes:
+      - hds-secrets:/secrets
     depends_on:
       hds-db:
         condition: service_healthy
@@ -238,13 +243,16 @@ services:
       - HDSEARCH_API_URL=http://hds-api:8791
       - NEXT_PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:8791}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
-      - HDSEARCH_INTERNAL_SECRET=${HDSEARCH_INTERNAL_SECRET}
-      - HDSEARCH_WEB_SESSION_SECRET=${HDSEARCH_WEB_SESSION_SECRET}
+      # Shares the API's auto-generated internal + session secrets via /secrets.
+      - HDSEARCH_SECRETS_FILE=/secrets/hdsearch-secrets.json
     ports:
       - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - hds-secrets:/secrets
     depends_on:
+      # wait until the API is healthy so the shared secrets file already exists
       hds-api:
-        condition: service_started
+        condition: service_healthy
     networks: [hdsnet]
 
   # ---- OPT-IN self-hosted OpenStreetMap geocoder (the `maps` modality) ----
@@ -265,6 +273,7 @@ services:
     networks: [hdsnet]
 
 volumes:
+  hds-secrets:          # auto-generated crypto secrets, shared by api + web
   hds-postgres-data:
   hds-redis-data:
   hds-seaweedfs-data:

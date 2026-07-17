@@ -20,8 +20,11 @@ COPY --from=build /app/dist ./dist
 COPY db ./db
 COPY src/priorities.csv ./src/priorities.csv
 COPY --from=build /app/dist/src/ai/llm-providers.json ./dist/src/ai/llm-providers.json
-# non-root
-RUN useradd -r -u 10001 hdsearch && chown -R hdsearch /app
+# non-root. /secrets is a shared volume (with the web app) where auto-generated
+# crypto secrets (encryption/internal/session) are persisted — no secrets in env.
+RUN useradd -r -u 10001 hdsearch \
+  && mkdir -p /secrets && chown hdsearch:hdsearch /secrets \
+  && chown -R hdsearch /app
 USER hdsearch
 EXPOSE 8791
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

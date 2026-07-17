@@ -111,6 +111,24 @@ open http://localhost:3000                    # sign in via dev-login (any email
 > First `up` pulls several GB (embeddings + browsers + providers) and builds the
 > api/web images; the embeddings image is amd64 (emulated on Apple Silicon).
 
+### Secrets model — no secrets in `.env`
+
+`.env.selfhost` contains **no secrets** (only ports, URLs, flags). Secrets are
+handled in three ways so the user never pastes one into a file:
+
+- **App crypto secrets** (encryption key, internal BFF secret, web session
+  secret) — auto-generated on first boot and persisted to a shared Docker volume
+  (`hds-secrets`, mounted at `/secrets` in both api + web). They agree
+  automatically and survive restarts (verified: generated once, byte-stable
+  across restart → the encryption key never rotates out from under stored data).
+  Both containers run as uid 10001 so the `0600` file is shared. `env.ts` /
+  `web/src/lib/config.ts` fall back from env → shared file → generate.
+- **Bundled-infra credentials** (Postgres / SeaweedFS) — fixed internal defaults
+  in the compose; those services are never exposed off the private network.
+- **Provider API keys** (OpenAI, Brave, SerpAPI, …) — entered in the **UI**
+  (Account → Provider Keys, or Dashboard → System Admin for system-wide default
+  keys), stored AES-256-GCM encrypted in the DB. Never in env.
+
 ---
 
 ## Phase 2 — Local auth (first-run admin, no Auth0)  ✅ DONE & SMOKE-TESTED

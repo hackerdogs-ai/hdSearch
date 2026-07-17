@@ -21,7 +21,11 @@ COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 COPY --from=build /app/content ./content
-RUN useradd -r -u 10002 hdweb && chown -R hdweb /app
+# uid 10001 matches the API container so the shared /secrets file (written 0600 by
+# the API) is readable here; /secrets is a shared volume for auto-generated secrets.
+RUN useradd -r -u 10001 hdweb \
+  && mkdir -p /secrets && chown hdweb:hdweb /secrets \
+  && chown -R hdweb /app
 USER hdweb
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
