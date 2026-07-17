@@ -135,7 +135,19 @@ A chat that **plans, calls tools, and streams** a cited answer. Tools:
 
 ## 🔌 MCP server
 
-Expose HD-Search to Claude / Cursor / any MCP client:
+The stack runs a **Streamable HTTP** MCP server at **`http://localhost:8792/mcp`**.
+Connect any MCP client (Claude, Cursor, …) — each caller authenticates with their
+own key via the `Authorization` header (so their scopes and rate limits apply):
+
+```jsonc
+{ "mcpServers": { "hd-search": {
+  "type": "streamable-http",
+  "url": "http://localhost:8792/mcp",
+  "headers": { "Authorization": "Bearer sk-hds-…" }
+}}}
+```
+
+Prefer a local process (stdio)? That works too:
 
 ```jsonc
 { "mcpServers": { "hd-search": {
@@ -143,6 +155,7 @@ Expose HD-Search to Claude / Cursor / any MCP client:
   "env": { "HDSEARCH_API_URL": "http://127.0.0.1:8791", "HDSEARCH_API_KEY": "sk-hds-…" }
 }}}
 ```
+
 Tools: `hd_search`, `hd_crawl`, `hd_vector_search`, `hd_vector_index`, `hd_list_engines`.
 
 ## ⚙️ Configuration

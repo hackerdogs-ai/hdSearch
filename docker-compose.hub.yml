@@ -226,6 +226,22 @@ services:
         condition: service_healthy
     networks: [hdsnet]
 
+  # MCP server (Streamable HTTP) on http://localhost:8792/mcp — same published api image.
+  hds-mcp:
+    image: ${HDSEARCH_IMAGE_NS:-hackerdogs}/hdsearch:api${HDSEARCH_IMAGE_TAG:+-${HDSEARCH_IMAGE_TAG}}
+    container_name: hds-mcp
+    restart: unless-stopped
+    command: ["node", "dist/mcp/server.js", "--http"]
+    environment:
+      - HDSEARCH_API_URL=http://hds-api:8791
+      - MCP_PORT=8792
+    ports:
+      - "${MCP_PORT:-8792}:8792"
+    depends_on:
+      hds-api:
+        condition: service_healthy
+    networks: [hdsnet]
+
   hds-photon:
     image: rtuszik/photon-docker:latest
     container_name: hds-photon

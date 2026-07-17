@@ -150,6 +150,20 @@ Relevant endpoints (public): `GET /v1/auth/status`, `POST /v1/auth/register`,
 
 ## 7. MCP server
 
+The self-host stack runs the MCP server over **Streamable HTTP** (`hds-mcp` service)
+at `http://localhost:8792/mcp`. Each client authenticates with its own API key via
+the `Authorization` header, so per-caller scopes and rate limits apply.
+
+```jsonc
+{ "mcpServers": { "hd-search": {
+  "type": "streamable-http",
+  "url": "http://localhost:8792/mcp",
+  "headers": { "Authorization": "Bearer sk-hds-…" }
+}}}
+```
+
+Local clients can also spawn it over **stdio** (uses `HDSEARCH_API_KEY`):
+
 ```jsonc
 { "mcpServers": { "hd-search": {
   "command": "node",
@@ -157,8 +171,10 @@ Relevant endpoints (public): `GET /v1/auth/status`, `POST /v1/auth/register`,
   "env": { "HDSEARCH_API_URL": "http://127.0.0.1:8791", "HDSEARCH_API_KEY": "sk-hds-…" }
 }}}
 ```
-Tools: `hd_search`, `hd_crawl`, `hd_vector_search`, `hd_vector_index`,
-`hd_list_engines`.
+
+Transport selection: `--http` (or `MCP_TRANSPORT=http`) runs Streamable HTTP on
+`MCP_PORT` (default 8792); otherwise stdio. Tools: `hd_search`, `hd_crawl`,
+`hd_vector_search`, `hd_vector_index`, `hd_list_engines`.
 
 ---
 

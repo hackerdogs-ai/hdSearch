@@ -264,6 +264,26 @@ services:
         condition: service_healthy
     networks: [hdsnet]
 
+  # ==========================================================================
+  # MCP server (Streamable HTTP) — connect any MCP client to http://localhost:8792/mcp
+  # with Authorization: Bearer sk-hds-<your key>. Uses the same api image.
+  # ==========================================================================
+  hds-mcp:
+    build: ./api
+    image: hdsearch:api
+    container_name: hds-mcp
+    restart: unless-stopped
+    command: ["node", "dist/mcp/server.js", "--http"]
+    environment:
+      - HDSEARCH_API_URL=http://hds-api:8791
+      - MCP_PORT=8792
+    ports:
+      - "${MCP_PORT:-8792}:8792"
+    depends_on:
+      hds-api:
+        condition: service_healthy
+    networks: [hdsnet]
+
   # ---- OPT-IN self-hosted OpenStreetMap geocoder (the `maps` modality) ----
   # `docker compose --env-file .env.selfhost -f docker-compose.selfhost.yml --profile maps up -d hds-photon`
   # then set HDSEARCH_GEOCODER_URL=http://hds-photon:2322. Without it the API uses
