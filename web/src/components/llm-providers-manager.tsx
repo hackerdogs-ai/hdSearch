@@ -125,7 +125,7 @@ export function LlmProvidersManager() {
         <div>
           <h2 className="text-lg font-semibold text-ink-900">LLM Providers</h2>
           <p className="mt-1 text-sm text-ink-500">
-            {enabledLlm} of {filteredModels.length} models enabled{aiPlan ? ` (${aiPlan} plan)` : ''}.
+            {enabledLlm} of {filteredModels.length} models enabled.
             Toggle models on or off for AI Search. Pick your active model from the dropdown in AI Search.{' '}
             <Link href="/dashboard/services" className="text-brand-600 hover:underline">
               Back to integrations

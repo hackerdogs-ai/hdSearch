@@ -81,10 +81,42 @@ give; the pipeline is correct. Setup: host Ollama wired via
   TS-14 · maps detail TS-15 · OpenAI-compat AI-17 · dashboard pages DASH-04..09 ·
   public pages TS-16 · rate-limit NEG-03 / CORS NEG-04.
 
-**Verdict so far:** every major subsystem — infra, secrets, auth/RBAC, search
-(all modalities + options), crawl, vector, AI Search + tool-calling, MCP, API/
-provider keys, dashboard — is working in the self-hosted build. No product
-defects found; the two initial "fails" were test-harness/plan errors.
+### P1/P2 tail (Run 1 continued) — all attempted PASS
+
+- **AI-17** OpenAI-compat `POST /v1/openai/chat/completions` → `chat.completion`. PASS.
+- **AI-07** `hd_chart` tool — model called it with `chartType` data. PASS.
+  (Two distinct AI tools now proven: `hd_search` + `hd_chart`.)
+- **RAG (TS-10):** RAG-01 upload → **status ready, 2/2 chunks indexed** (parse→
+  embed→index); RAG-02 AI answer grounded in the file — *"passphrase is
+  BANANA-HELICOPTER-42 [1] … Zar City [1]"* **with citations**; RAG-06 delete
+  cascade (files→0). PASS.
+- **Settings:** SET-01 ranking editor (per-modality drag-reorder priority list),
+  SET-02 provider toggles, SET-04 LLM Providers (23/23 models, toggles). PASS.
+- **NEG-03** rate limit — exactly 120 → 200, 30 → **429** with `X-RateLimit-*`
+  headers. PASS. **NEG-04** CORS header present. PASS.
+- **CRWL-07** archive extract 200. **Public pages** terms/docs/integrations/
+  trends 200; verify-email 307 (correctly redirects — no email gate locally). PASS.
+
+### Still untested (low-risk tail)
+
+Per-result UI action buttons (SUI-10..13 screenshot/pdf/archived), the other AI
+tools (hd_maps/plot_map/crawl/archive/weather/render — the **calling mechanism is
+proven**, invocation is model-dependent), cache-TTL settings toggle, multi-file/
+folder RAG, maps UI detail, a couple of static dashboard pages. None are on the
+critical path.
+
+### Minor cosmetic leftover (fixed)
+
+LLM Providers subtitle said "(free plan)" — removed. (The "Plan: Free" chips in
+the header/profile/account still show an accurate "Free"; removing the plan
+concept entirely from that chrome is optional polish.)
+
+**Verdict:** every major subsystem — infra, secrets, auth/RBAC, search (all
+modalities + options), crawl, vector, **AI Search + tool-calling + RAG (grounded,
+cited)**, MCP, OpenAI-compat, API/provider keys, settings, dashboard, rate-limit/
+security — works in the self-hosted build. **No product defects found**; the two
+initial "fails" were test-harness/plan errors, and one cosmetic copy leftover was
+fixed.
 
 ---
 
