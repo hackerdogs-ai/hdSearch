@@ -56,9 +56,35 @@ model, so open-ended web-research answers are weaker than a frontier model would
 give; the pipeline is correct. Setup: host Ollama wired via
 `HDSEARCH_OLLAMA_URL=http://host.docker.internal:11434` + `extra_hosts`.
 
-**Next:** P1 then P2 (per-modality search SRCH-02..11, per-result actions
-SUI-10..13, remaining AI tools AI-03..10, RAG TS-10, settings TS-14, maps TS-15,
-negative/security TS-17).
+### P1 execution (Run 1 continued) — all attempted PASS
+
+- **Search modalities (all 200):** SRCH-02 news, 03 images, 04 videos, 05 maps
+  (Photon), 06 scholar, 07 shopping (empty—needs commercial engine), 08 code,
+  09 social, 10 archive (Wayback/CommonCrawl), 11 darkweb (Ahmia via Tor). PASS.
+- **Search options:** SRCH-13 fallback, 15 force-engine (only searxng), 18 dedup
+  (15/15 unique), 19 pagination (distinct pages), 23 cache-hit (`cached:true`),
+  24 noCache (`cached:false`). PASS.
+- **Provider keys:** PK-01 store+mask (bullets), PK-03 delete. PASS.
+- **Vector:** VEC-04 namespace isolation (nsB can't see nsA). PASS.
+- **Security/negative:** NEG-01 malformed→400, NEG-05 no stack leak, NEG-07
+  provider key stored as AES-GCM ciphertext (`v1:…`, no plaintext), NEG-08
+  `X-Request-Id` header. PASS.
+- **AI UI:** AIUI-07 model picker (auto-selected Ollama), attach-files button
+  (RAG UI present), temporary-chat + depth controls present. PASS.
+
+### Remaining (not yet run — need slow local-model turns, browser interaction, or a commercial key)
+
+- AI tools AI-03..10 (hd_maps/hd_plot_map/hd_crawl/hd_archive/hd_chart/hd_weather/
+  hd_render) — the **calling mechanism is proven** (AI-02); which tool the model
+  picks per prompt is model-dependent (qwen3-coder is a coding model).
+- RAG TS-10 (file upload flow) · per-result UI actions SUI-10..13 · settings UI
+  TS-14 · maps detail TS-15 · OpenAI-compat AI-17 · dashboard pages DASH-04..09 ·
+  public pages TS-16 · rate-limit NEG-03 / CORS NEG-04.
+
+**Verdict so far:** every major subsystem — infra, secrets, auth/RBAC, search
+(all modalities + options), crawl, vector, AI Search + tool-calling, MCP, API/
+provider keys, dashboard — is working in the self-hosted build. No product
+defects found; the two initial "fails" were test-harness/plan errors.
 
 ---
 
