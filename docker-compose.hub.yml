@@ -217,6 +217,7 @@ services:
       - NEXT_PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:8791}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
       - HDSEARCH_SECRETS_FILE=/secrets/hdsearch-secrets.json
+      - HOSTNAME=0.0.0.0   # bind Next to all interfaces so the loopback healthcheck passes
     ports:
       - "${WEB_PORT:-3000}:3000"
     volumes:

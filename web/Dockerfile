@@ -16,6 +16,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+# Next standalone binds to $HOSTNAME; Docker defaults it to the container id, so
+# without this the server listens on the container IP only and the loopback
+# healthcheck fails. Bind to all interfaces.
+ENV HOSTNAME=0.0.0.0
 # Next standalone bundle (server + minimal node_modules) + static assets
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static

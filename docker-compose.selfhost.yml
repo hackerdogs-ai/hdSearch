@@ -254,6 +254,7 @@ services:
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
       # Shares the API's auto-generated internal + session secrets via /secrets.
       - HDSEARCH_SECRETS_FILE=/secrets/hdsearch-secrets.json
+      - HOSTNAME=0.0.0.0   # bind Next to all interfaces so the loopback healthcheck passes
     ports:
       - "${WEB_PORT:-3000}:3000"
     volumes:
