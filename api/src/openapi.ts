@@ -54,7 +54,7 @@ export function openapiDoc() {
       '/v1/search/vector': {
         post: {
           summary: 'Vector (semantic) KNN search over an indexed namespace',
-          responses: { '200': { description: 'ok' }, '402': { description: 'vector requires DevTest+' } },
+          responses: { '200': { description: 'ok' } },
         },
       },
       '/v1/search/vector/index': {

@@ -21,7 +21,7 @@ export default async function AdminPage() {
     return (
       <div className="card p-8 text-center">
         <h1 className="text-xl font-bold text-ink-900">Access Denied</h1>
-        <p className="mt-2 text-sm text-ink-500">System Administration is restricted to super users.</p>
+        <p className="mt-2 text-sm text-ink-500">System Administration is restricted to administrators.</p>
       </div>
     );
   }
@@ -31,8 +31,7 @@ export default async function AdminPage() {
       <div>
         <h1 className="text-2xl font-bold text-ink-900">System Administration</h1>
         <p className="mt-1 text-sm text-ink-500">
-          Manage default provider keys, plan-to-model mappings, and system-wide LLM configuration.
-          Only super users can access this page.
+          Manage system-wide default provider keys. Only administrators can access this page.
         </p>
       </div>
 

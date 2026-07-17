@@ -85,7 +85,7 @@ accountRoutes.get('/', async (c) => {
     plan,
     role: p.role || 'user',
     disclaimerAccepted,
-    usage: { search: s, crawl: cr, vector: v, total: s + cr + v, quota: plan.quota },
+    usage: { search: s, crawl: cr, vector: v, total: s + cr + v, quota: null },
   });
 });
 

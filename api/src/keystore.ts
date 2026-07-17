@@ -52,9 +52,9 @@ export async function resolveKey(
     }
   }
 
-  // 2. Plan-level default key (set by super users for each plan tier)
-  if (!value && planId) {
-    value = await resolveDefaultKey(field, planId);
+  // 2. System default key (set by an admin; applies to all users)
+  if (!value) {
+    value = await resolveDefaultKey(field);
   }
 
   // 3. Dev fallback: a single shared key set from .env, only when RUN_MODE=dev.

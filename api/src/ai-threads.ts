@@ -259,5 +259,5 @@ export async function isFirstTurn(userId: string, threadId: string): Promise<boo
 }
 
 /** Tier label for the /v1/ai/threads response — mirrors historyTierFor so the client
- *  can show the same "Synced · 3-day server history + durable archive (paid)" copy. */
+ *  can show the same "Synced · 3-day server history + durable archive" copy. */
 export const aiThreadTierFor = (userId: string) => (archiveEligible(userId) ? 'redis+archive' : 'redis');

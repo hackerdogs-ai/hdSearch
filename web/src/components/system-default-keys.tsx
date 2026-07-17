@@ -16,8 +16,6 @@ interface DefaultKey {
   updatedAt: string;
 }
 
-const PLANS = ['free', 'dev', 'devtest', 'production', 'enterprise'] as const;
-
 const LLM_PROVIDERS = [
   { id: 'anthropic', name: 'Anthropic', field: 'anthropic' },
   { id: 'openai', name: 'OpenAI', field: 'openai' },
@@ -46,7 +44,9 @@ export function SystemDefaultKeys() {
   const [showForm, setShowForm] = useState(false);
 
   const [formProvider, setFormProvider] = useState(LLM_PROVIDERS[0]!.id);
-  const [formPlan, setFormPlan] = useState<string>('free');
+  // System keys apply to all users (no plan tiers in the open-source build); the
+  // stored plan_id is a fixed bucket kept only for the DB schema.
+  const formPlan = 'free';
   const [formSecret, setFormSecret] = useState('');
   const [formLabel, setFormLabel] = useState('');
 
@@ -104,7 +104,7 @@ export function SystemDefaultKeys() {
   };
 
   const handleDelete = async (field: string, planId: string) => {
-    if (!confirm(`Delete the default ${field} key for ${planId} plan?`)) return;
+    if (!confirm(`Delete the default ${field} key?`)) return;
     setSaving(true);
     try {
       const res = await fetch('/api/panel/admin-keys', {
@@ -140,8 +140,8 @@ export function SystemDefaultKeys() {
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-ink-900">Default Provider Keys</h2>
           <p className="mt-1 text-sm text-ink-500">
-            System-level API keys assigned per plan tier. Users without their own key
-            automatically use the default for their plan. Keys are encrypted at rest (AES-256-GCM).
+            System-wide API keys used by any user who hasn't set their own key.
+            Keys are encrypted at rest (AES-256-GCM).
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-3">
@@ -157,31 +157,17 @@ export function SystemDefaultKeys() {
       {showForm && (
         <div className="card space-y-4 border-2 border-brand-200 p-5">
           <h3 className="font-semibold text-ink-900">Add / Update Default Key</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink-700">Provider</label>
-              <select
-                value={formProvider}
-                onChange={(e) => setFormProvider(e.target.value)}
-                className="w-full rounded border border-ink-200 px-3 py-2 text-sm"
-              >
-                {LLM_PROVIDERS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.field})</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink-700">Plan Tier</label>
-              <select
-                value={formPlan}
-                onChange={(e) => setFormPlan(e.target.value)}
-                className="w-full rounded border border-ink-200 px-3 py-2 text-sm"
-              >
-                {PLANS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-ink-700">Provider</label>
+            <select
+              value={formProvider}
+              onChange={(e) => setFormProvider(e.target.value)}
+              className="w-full rounded border border-ink-200 px-3 py-2 text-sm"
+            >
+              {LLM_PROVIDERS.map((p) => (
+                <option key={p.id} value={p.id}>{p.name} ({p.field})</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink-700">API Key</label>
@@ -213,7 +199,7 @@ export function SystemDefaultKeys() {
 
       {keys.length === 0 && !showForm ? (
         <div className="card p-8 text-center text-sm text-ink-400">
-          No default keys configured yet. Click "+ Add Key" to assign a default provider key to a plan tier.
+          No default keys configured yet. Click "+ Add Key" to add a system-wide default provider key.
         </div>
       ) : (
         <div className="space-y-4">
@@ -262,9 +248,8 @@ export function SystemDefaultKeys() {
       <div className="card bg-ink-50 p-4">
         <h3 className="text-sm font-semibold text-ink-700">Key Resolution Order</h3>
         <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-ink-600">
-          <li><strong>Per-user key</strong> — User's own encrypted key (highest priority)</li>
-          <li><strong>Plan default key</strong> — System key for the user's plan tier (set here)</li>
-          <li><strong>Dev fallback</strong> — Environment variable (.env), only in dev mode</li>
+          <li><strong>Per-user key</strong> — the user's own encrypted key (highest priority)</li>
+          <li><strong>System default key</strong> — a system-wide key set here, used by every user</li>
         </ol>
       </div>
     </div>

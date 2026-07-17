@@ -1,7 +1,7 @@
-// System-level default provider keys for AI Mode. Super users configure a key
-// per (provider field, plan tier). When resolving credentials at call time the
-// chain is: per-user encrypted key → plan default key → dev .env fallback.
-// Keys are encrypted with the same AES-256-GCM as user keys (crypto.ts).
+// System-level default provider keys. Admins configure a key per provider field;
+// it applies to ALL users (the open-source build has no plan tiers). When resolving
+// credentials at call time the chain is: per-user encrypted key → system default
+// key → dev .env fallback. Keys are AES-256-GCM encrypted like user keys (crypto.ts).
 import { SCHEMA, query, tryQuery, dbAvailable } from '../db.js';
 import { encryptSecret, decryptSecret, maskSecret } from '../crypto.js';
 import { log, errFields } from '../logger.js';
@@ -13,15 +13,14 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 const TTL_MS = 30_000;
 
-function ck(field: string, planId: string): string {
-  return `sysk::${field}::${planId}`;
+function ck(field: string): string {
+  return `sysk::${field}`;
 }
 
-export async function resolveDefaultKey(
-  field: string,
-  planId: string,
-): Promise<string | undefined> {
-  const key = ck(field, planId);
+// Resolve the system default key for a provider field, regardless of plan tier —
+// a system key set by an admin applies to every user (no plans in the OSS build).
+export async function resolveDefaultKey(field: string): Promise<string | undefined> {
+  const key = ck(field);
   const hit = cache.get(key);
   if (hit && hit.exp > Date.now()) return hit.value;
 
@@ -30,9 +29,9 @@ export async function resolveDefaultKey(
     try {
       const rows = await query<{ secret_enc: string }>(
         `select secret_enc from ${SCHEMA}.system_provider_keys
-         where field = $1 and plan_id = $2 and status = 'active'
+         where field = $1 and status = 'active'
          order by updated_at desc limit 1`,
-        [field, planId],
+        [field],
       );
       if (rows[0]?.secret_enc) value = decryptSecret(rows[0].secret_enc);
     } catch (e) {
@@ -112,7 +111,7 @@ export async function upsertDefaultKey(
      returning id, updated_at`,
     [provider, field, planId, enc, label, adminUserId],
   );
-  cache.delete(ck(field, planId));
+  cache.delete(ck(field));
   return {
     id: rows[0]!.id,
     provider,
@@ -131,7 +130,7 @@ export async function deleteDefaultKey(field: string, planId: string): Promise<b
     `delete from ${SCHEMA}.system_provider_keys where field = $1 and plan_id = $2 returning field`,
     [field, planId],
   );
-  cache.delete(ck(field, planId));
+  cache.delete(ck(field));
   return rows.length > 0;
 }
 

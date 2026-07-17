@@ -15,3 +15,6 @@ web/.env.prod
 # OS / editor / local tooling
 .DS_Store
 .claude/
+
+# TS incremental build cache
+*.tsbuildinfo

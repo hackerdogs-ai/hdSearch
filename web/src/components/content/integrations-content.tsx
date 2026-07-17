@@ -53,7 +53,7 @@ curl ${API_URL}/v1/crawl \\
   -H "authorization: Bearer sk-hds-YOUR_KEY" \\
   -H "content-type: application/json" \\
   -d '{"url":"https://example.com","formats":["markdown","links"]}'`} />
-          <CodeBlock code={`# Vector search (DevTest+)
+          <CodeBlock code={`# Vector search
 curl ${API_URL}/v1/search/vector \\
   -H "authorization: Bearer sk-hds-YOUR_KEY" \\
   -H "content-type: application/json" \\

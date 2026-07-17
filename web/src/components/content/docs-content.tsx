@@ -10,11 +10,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8791';
 
 const ENDPOINTS = [
   { m: 'POST', p: '/v1/search', d: 'Aggregated search. Body: q, modality, engine?, mode(fallback|aggregate), limit, page, country?, lang?, freshness?, facets, noCache.' },
-  { m: 'POST', p: '/v1/search/vector', d: 'Semantic KNN over a namespace. Body: q, namespace, k, groundWithWeb. Requires DevTest+.' },
+  { m: 'POST', p: '/v1/search/vector', d: 'Semantic KNN over a namespace. Body: q, namespace, k, groundWithWeb.' },
   { m: 'POST', p: '/v1/search/vector/index', d: 'Embed + index documents. Body: documents[], namespace, ttl (default 24h).' },
   { m: 'POST', p: '/v1/crawl', d: 'Crawl a URL. Body: url, engine?, formats[](markdown|text|html|links|images|screenshot|pdf), render, store. screenshot/pdf return data URLs.' },
   { m: 'GET', p: '/v1/archive', d: 'Fetch a web-archive capture (the archived page, not the live site). Query: provider(wayback|commoncrawl), url, ts, format(json|html). Returns markdown/text or the archived HTML.' },
-  { m: 'GET/DELETE', p: '/v1/history', d: 'Your search history — the 3-day Redis window (paid plans also get a durable S3 archive). DELETE clears it.' },
+  { m: 'GET/DELETE', p: '/v1/history', d: 'Your search history — a 3-day Redis window plus a durable S3 archive. DELETE clears it.' },
   { m: 'GET', p: '/v1/engines', d: 'List engines. Query: category(search|crawl|darkweb), modality.' },
   { m: 'GET', p: '/v1/account', d: 'Profile, plan and current monthly usage.' },
   { m: 'GET', p: '/openapi.json', d: 'Full OpenAPI 3.1 spec.' },
@@ -79,7 +79,6 @@ export function DocsContent({ apiHref = '/api' }: { apiHref?: string }) {
 
         <h3 className="mt-6 text-sm font-semibold text-ink-700">Vector (semantic) search</h3>
         <div className="mt-2"><CodeTabs snippets={vectorSnippets(API_URL)} /></div>
-        <p className="mt-2 text-sm text-ink-500">Vector endpoints require the DevTest plan or higher.</p>
       </section>
 
       <section className="card p-6">

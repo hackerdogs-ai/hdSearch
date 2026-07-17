@@ -178,8 +178,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
         {error && (
           <div className="card border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error.includes('quota') ? 'Search quota reached. ' : ''}
-            {error.includes('DevTest') ? 'Semantic search requires the DevTest plan or higher. ' : ''}
             {error}{' '}
             {!session && (
               <a href="/login" className="font-semibold underline">
