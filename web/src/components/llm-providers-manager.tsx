@@ -212,8 +212,6 @@ export function LlmProvidersManager() {
                     <div className="mt-2 grid grid-cols-2 gap-1 text-sm text-ink-500">
                       <span>Context: {(m.contextTokens / 1000).toFixed(0)}K</span>
                       <span>Output: {(m.maxOutputTokens / 1000).toFixed(0)}K</span>
-                      <span>In: ${m.inputPer1M}/1M</span>
-                      <span>Out: ${m.outputPer1M}/1M</span>
                     </div>
 
                     <div className="mt-auto pt-3">

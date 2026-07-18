@@ -470,7 +470,7 @@ function LlmRankingList({ models, loadError, prefs, saving, dragId, dragOverId, 
             disabled={disabled}
             noKey={noKey}
             requiresKeys={m.requiresKeys.length > 0}
-            meta={`$${m.inputPer1M}/$${m.outputPer1M} per 1M`}
+            meta={`${(m.contextTokens / 1000).toFixed(0)}K context`}
             onDragStart={() => onDragStart(m.id)}
             onDragEnd={onDragEnd}
             onDragOver={(ev) => { ev.preventDefault(); onDragOver(m.id); }}

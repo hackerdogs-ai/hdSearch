@@ -14,7 +14,7 @@ import {
 } from '../cache-ttl.js';
 import { listDefaultKeys, upsertDefaultKey, deleteDefaultKey } from '../ai/default-keys.js';
 import { getProviderMeta, getPlanAccess, listModels, invalidateDbCache, refreshFromDb } from '../ai/models.js';
-import { upsertModel, deleteModel } from '../ai/model-registry-db.js';
+import { upsertModel, deleteModel, loadAllModelsForAdmin } from '../ai/model-registry-db.js';
 import { log, errFields } from '../logger.js';
 
 export const adminRoutes = new Hono();
@@ -126,10 +126,13 @@ adminRoutes.get('/llm-providers', async (_c) => {
   return _c.json({ providers: getProviderMeta(), planAccess: getPlanAccess() });
 });
 
-// GET /v1/admin/llm-models — list all models (includes disabled)
-adminRoutes.get('/llm-models', async (_c) => {
+// GET /v1/admin/llm-models — list all models (includes disabled + source tag)
+adminRoutes.get('/llm-models', async (c) => {
+  const all = await loadAllModelsForAdmin();
+  if (all) return c.json({ models: all });
+  // DB unavailable → fall back to the in-memory (enabled-only) registry.
   await refreshFromDb();
-  return _c.json({ models: listModels() });
+  return c.json({ models: listModels().map((m) => ({ ...m, source: 'json' })) });
 });
 
 const ModelSchema = z.object({

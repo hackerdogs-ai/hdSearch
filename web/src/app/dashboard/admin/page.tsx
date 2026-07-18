@@ -4,6 +4,7 @@ import { api, ApiError } from '@/lib/api';
 import { SystemDefaultKeys } from '@/components/system-default-keys';
 import { SignupPolicy } from '@/components/signup-policy';
 import { CacheTtlPolicy } from '@/components/cache-ttl-policy';
+import { ModelRegistryManager } from '@/components/model-registry-manager';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,8 @@ export default async function AdminPage() {
       <SignupPolicy />
 
       <CacheTtlPolicy />
+
+      <ModelRegistryManager />
 
       <a
         href="/dashboard/admin/infrastructure"

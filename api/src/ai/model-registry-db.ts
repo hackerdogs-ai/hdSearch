@@ -156,6 +156,48 @@ export async function syncJsonToDb(
   }
 }
 
+/** Admin view of a model row (includes disabled + the source tag). */
+export interface AdminModelRow {
+  id: string;
+  provider: string;
+  label: string;
+  contextTokens: number;
+  maxOutputTokens: number;
+  capabilities: { tools: boolean; vision: boolean; thinking: boolean; streaming: boolean };
+  defaultRank: number;
+  enabled: boolean;
+  plans: string[];
+  source: string; // 'json' | 'admin'
+}
+
+/** Every model in the DB — enabled AND disabled — for the admin registry manager. */
+export async function loadAllModelsForAdmin(): Promise<AdminModelRow[] | null> {
+  if (!dbAvailable()) return null;
+  try {
+    const rows = await tryQuery<DbModel>(
+      `SELECT id, provider_id, label, context_tokens, max_output_tokens,
+              capabilities, default_rank, enabled, plans, source
+       FROM ${SCHEMA}.llm_models ORDER BY provider_id, default_rank`,
+      [],
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      provider: r.provider_id,
+      label: r.label,
+      contextTokens: Number(r.context_tokens),
+      maxOutputTokens: Number(r.max_output_tokens),
+      capabilities: r.capabilities || { tools: false, vision: false, thinking: false, streaming: true },
+      defaultRank: r.default_rank,
+      enabled: r.enabled,
+      plans: Array.isArray(r.plans) ? r.plans : [],
+      source: r.source,
+    }));
+  } catch (e) {
+    log.debug('loadAllModelsForAdmin failed', errFields(e));
+    return null;
+  }
+}
+
 export async function upsertModel(model: {
   id: string;
   providerId: string;
