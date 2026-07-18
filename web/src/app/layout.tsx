@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthFetchGuard } from '@/components/auth-fetch-guard';
+import { RecentsScope } from '@/components/recents-scope';
+import { recentsScope } from '@/lib/recents';
+import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen font-sans">
         <AuthFetchGuard />
+        {/* Namespace localStorage search history per account (shared-browser safety). */}
+        <RecentsScope scope={recentsScope(getSession()?.sub)} />
         {children}
       </body>
     </html>
