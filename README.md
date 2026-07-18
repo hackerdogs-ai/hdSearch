@@ -46,7 +46,7 @@ Pick a **deployment topology** — all on the `hdsearchnet` network:
 ```bash
 git clone https://github.com/hackerdogs-ai/hdsearch.git && cd hdsearch
 docker compose -f docker-compose-full.yml up -d     # pulls the images + bundled infra
-open http://localhost:3000                          # first run → create your admin account
+open http://localhost:3000                          # first run → setup wizard, then admin account
 ```
 
 **Split — run infra and core separately (scale them independently):**
@@ -57,16 +57,34 @@ docker compose -f docker-compose-core.yml up -d     # api + web
 
 **Core only — point HD-Search at services you already run** (Postgres, Redis, S3, …):
 ```bash
-HDSEARCH_DATABASE_URL=postgres://user:pw@your-db:5432/hdsearch \
-HDSEARCH_REDIS_URL=redis://your-redis:6379/5 \
-HDSEARCH_S3_ENDPOINT=http://your-s3:8333 \
-  docker compose -f docker-compose-core.yml up -d
+docker compose -f docker-compose-core.yml up -d     # then open the wizard and enter your endpoints
 ```
+No env vars required — the **setup wizard** (below) collects and verifies your
+endpoints in the browser. You *can* still pre-seed them with
+`HDSEARCH_DATABASE_URL` / `HDSEARCH_REDIS_URL` / `HDSEARCH_S3_ENDPOINT` if you
+prefer a headless bootstrap.
+
+### First-run setup wizard
+
+On first visit every page redirects to **`/setup`** — an OS-installer-style wizard
+that connects HD-Search to its infrastructure:
+
+1. **Welcome** → 2. **Datastores** (Postgres, Redis, S3, embeddings) → 3. **Providers**
+   (SearXNG, OpenSERP, Crawl4AI, Browserless, Tor) → 4. **Review & finish**.
+- Every field **defaults to the bundled container name** on `hdsearchnet`
+  (`hds-db`, `hds-redis`, …), so the Full/Split stacks are all green out of the box —
+  just click through.
+- Each service has a **Test** button that runs a live reachability probe. Required
+  services (Database, Redis) must be reachable — **the Next button stays greyed until they are**.
+- Running your own datastores? Replace the defaults, click Test, continue.
+- Finishing writes the endpoints to a config volume and marks setup complete;
+  the gate lifts and you proceed to **create the admin account** (or set
+  `HDSEARCH_ADMIN_EMAIL` / `HDSEARCH_ADMIN_PASSWORD` for a headless bootstrap).
+- Change endpoints later at **System Admin → Infrastructure** (admin-only).
+  Infrastructure changes take effect after `docker restart hds-api`.
 
 That's the whole setup. **There are no secrets to configure** — the app
-auto-generates its crypto secrets on first boot. On first visit you create the
-**admin account** in the browser (or set `HDSEARCH_ADMIN_EMAIL` /
-`HDSEARCH_ADMIN_PASSWORD` for a headless bootstrap).
+auto-generates its crypto secrets on first boot.
 
 - **Add search/LLM provider keys later, in the UI** — *Account → Provider Keys* (per-user) or *System Admin* (system-wide). The free/self-hosted engines and local Ollama work with no keys.
 - The API also serves the **MCP server (Streamable HTTP) on `:8792`**, in the same container — no separate process to run.

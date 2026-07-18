@@ -35,6 +35,17 @@ export default async function AdminPage() {
         </p>
       </div>
 
+      <a
+        href="/dashboard/admin/infrastructure"
+        className="flex items-center justify-between rounded-lg border border-ink-100 bg-white px-4 py-3 hover:border-brand-300"
+      >
+        <span>
+          <span className="block text-sm font-semibold text-ink-900">Infrastructure endpoints</span>
+          <span className="block text-sm text-ink-500">Edit datastore & provider connections set during first-run setup.</span>
+        </span>
+        <span className="text-ink-400">→</span>
+      </a>
+
       <SystemDefaultKeys />
     </div>
   );

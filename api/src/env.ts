@@ -5,6 +5,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveSecret } from './secrets.js';
+import { loadConfig, pick } from './runtime-config.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +45,10 @@ const e = process.env;
 const int = (v: string | undefined, d: number) => (v && !Number.isNaN(+v) ? +v : d);
 const bool = (v: string | undefined, d: boolean) => (v === undefined ? d : /^(1|true|yes|on)$/i.test(v));
 
+// Infra/provider endpoints set by the setup wizard override env (which overrides
+// defaults). Read once at startup; changes take effect on the next restart.
+const rc = loadConfig();
+
 export type RunMode = 'dev' | 'prod';
 
 export const SERVICE_ROOT = ROOT;
@@ -59,27 +64,24 @@ export const env = {
   // hd-search's general keyspace lives on a DEDICATED logical db (db 5) to stay isolated
   // from the other services sharing hd-redis: db 0 (core), db 1 (hd-feeds), db 3/4
   // (celery), db 15 (worldmonitor). Key prefix `hds:` adds a second layer of isolation.
-  redisUrl: e.HDSEARCH_REDIS_URL || e.REDIS_URL || 'redis://127.0.0.1:6379/5',
+  redisUrl: pick(rc.redis?.url, e.HDSEARCH_REDIS_URL || e.REDIS_URL, 'redis://127.0.0.1:6379/5'),
   // RediSearch can ONLY create indexes on db 0 ("Cannot create index on db != 0"), so the
   // vector index + its `hds:vec:` docs live on db 0 (prefix-isolated). Defaults to the same
   // host/port as redisUrl but db 0; override with HDSEARCH_VECTOR_REDIS_URL.
   vectorRedisUrl:
     e.HDSEARCH_VECTOR_REDIS_URL ||
-    (e.HDSEARCH_REDIS_URL || e.REDIS_URL || 'redis://127.0.0.1:6379/5').replace(/\/\d+$/, '/0'),
+    pick(rc.redis?.url, e.HDSEARCH_REDIS_URL || e.REDIS_URL, 'redis://127.0.0.1:6379/5').replace(/\/\d+$/, '/0'),
   keyPrefix: e.HDSEARCH_REDIS_PREFIX || 'hds',
 
   // ---- postgres / timescale (per-user encrypted provider keys, history, metrics) ----
-  pgUrl:
-    e.HDSEARCH_DATABASE_URL ||
-    e.DATABASE_URL ||
-    'postgres://postgres:postgres@127.0.0.1:5432/hd_search',
+  pgUrl: pick(rc.database?.url, e.HDSEARCH_DATABASE_URL || e.DATABASE_URL, 'postgres://postgres:postgres@127.0.0.1:5432/hd_search'),
   pgSchema: e.HDSEARCH_PG_SCHEMA || 'hd_search',
 
   // ---- s3-compatible store (seaweedfs): raw crawl payloads, large blobs ----
-  s3Endpoint: e.HDSEARCH_S3_ENDPOINT || e.STORAGE_AWS_ENDPOINT_URL || 'http://127.0.0.1:8333',
+  s3Endpoint: pick(rc.s3?.url, e.HDSEARCH_S3_ENDPOINT || e.STORAGE_AWS_ENDPOINT_URL, 'http://127.0.0.1:8333'),
   s3Region: e.STORAGE_AWS_REGION || 'us-east-1',
-  s3Key: e.STORAGE_AWS_ACCESS_KEY_ID || 'admin',
-  s3Secret: e.STORAGE_AWS_SECRET_ACCESS_KEY || 'key',
+  s3Key: pick(rc.s3?.accessKey, e.STORAGE_AWS_ACCESS_KEY_ID, 'admin'),
+  s3Secret: pick(rc.s3?.secretKey, e.STORAGE_AWS_SECRET_ACCESS_KEY, 'key'),
   bucket: e.HDSEARCH_BUCKET || 'hd-search',
   prefix: e.HDSEARCH_PREFIX ?? 'hd-search',
 
@@ -116,8 +118,8 @@ export const env = {
   vectorDim: int(e.HDSEARCH_VECTOR_DIM, 384), // MiniLM L6 = 384
   vectorIndex: e.HDSEARCH_VECTOR_INDEX || 'hds:vec:idx',
   // embeddings provider: 'minilm' (self-hosted, default) | 'openai' | 'none'
-  embeddingsProvider: (e.HDSEARCH_EMBEDDINGS_PROVIDER || 'minilm').toLowerCase(),
-  embeddingsUrl: e.HDSEARCH_EMBEDDINGS_URL || 'http://127.0.0.1:8081', // transformers-inference t2v (host 8081→container 8080)
+  embeddingsProvider: pick(rc.embeddings?.provider, e.HDSEARCH_EMBEDDINGS_PROVIDER, 'minilm').toLowerCase(),
+  embeddingsUrl: pick(rc.embeddings?.url, e.HDSEARCH_EMBEDDINGS_URL, 'http://127.0.0.1:8081'), // transformers-inference t2v
   // Embedding HTTP timeout — generous (default 60s) because a cold self-hosted MiniLM
   // can take ~10s on its first request, which would otherwise blow the 10s provider
   // default and leave file chunks un-indexed (chunks_indexed=0, degraded).
@@ -157,7 +159,7 @@ export const env = {
   },
 
   // ---- self-hosted provider endpoints (free, highest priority) ----
-  openserpUrl: e.HDSEARCH_OPENSERP_URL || 'http://127.0.0.1:7007',
+  openserpUrl: pick(rc.openserp?.url, e.HDSEARCH_OPENSERP_URL, 'http://127.0.0.1:7007'),
   // OpenSERP supports google, yandex, bing, baidu in this build. For maximum
   // breadth we query ALL of them and merge+dedupe (HDSEARCH_OPENSERP_MERGE=true).
   // Google may captcha datacenter IPs (engine-level fallback covers it).
@@ -167,9 +169,9 @@ export const env = {
   openserpMerge: bool(e.HDSEARCH_OPENSERP_MERGE, true),
   // per-engine timeout for openserp (browser scrapes are slow + serialized)
   openserpTimeoutMs: int(e.HDSEARCH_OPENSERP_TIMEOUT_MS, 30000),
-  searxngUrl: e.HDSEARCH_SEARXNG_URL || 'http://127.0.0.1:8899',
-  crawl4aiUrl: e.HDSEARCH_CRAWL4AI_URL || 'http://127.0.0.1:11235', // reuses hackerdogs-crawl4ai
-  browserlessUrl: e.HDSEARCH_BROWSERLESS_URL || 'http://127.0.0.1:3000', // reuses hackerdogs-browserless
+  searxngUrl: pick(rc.searxng?.url, e.HDSEARCH_SEARXNG_URL, 'http://127.0.0.1:8899'),
+  crawl4aiUrl: pick(rc.crawl4ai?.url, e.HDSEARCH_CRAWL4AI_URL, 'http://127.0.0.1:11235'),
+  browserlessUrl: pick(rc.browserless?.url, e.HDSEARCH_BROWSERLESS_URL, 'http://127.0.0.1:3000'),
   browserlessToken: e.HDSEARCH_BROWSERLESS_TOKEN || e.BROWSERLESS_TOKEN || '',
   // AI Mode: local Ollama endpoint (self-hosted LLMs, no key, $0 cost).
   ollamaUrl: e.HDSEARCH_OLLAMA_URL || 'http://127.0.0.1:11434',
@@ -189,7 +191,7 @@ export const env = {
   // Ahmia onion mirror (used as a Tor fallback when clearnet is blocked)
   ahmiaOnion: e.HDSEARCH_AHMIA_ONION || 'http://juhanurmihxlp77nkq76byazcldy2hlmovfu2epvl5ankdibsot4csyd.onion',
   // Tor SOCKS5 proxy for .onion darkweb providers (socks5h = remote DNS). Empty = disabled.
-  torProxy: e.HDSEARCH_TOR_PROXY || '',
+  torProxy: pick(rc.tor?.url, e.HDSEARCH_TOR_PROXY, ''),
   // Torch onion search engine address (configurable; onion addresses rot over time)
   torchOnion: e.HDSEARCH_TORCH_ONION || 'http://torchdeedp3i2jigzjdmfpn5ttjhthh5wbmda2rr3jvqjg5p77c54dqd.onion',
 
