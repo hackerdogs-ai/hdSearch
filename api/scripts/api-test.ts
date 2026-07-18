@@ -365,14 +365,12 @@ async function main() {
         { text: 'Eagles are raptors with sharp eyesight' },
       ] },
     });
-    if (r.status === 402) skip('plan has no vector entitlement');
     if (r.status === 503) skip('embeddings unavailable');
     assert(r.status === 200 && r.json.indexed >= 3, `status ${r.status}`);
     return `indexed ${r.json.indexed}`;
   });
   await test('POST /v1/search/vector (KNN)', async () => {
     const r = await call('/v1/search/vector', { body: { namespace: ns, q: 'bird with good vision', k: 2 } });
-    if (r.status === 402) skip('plan has no vector entitlement');
     if (r.status === 503) skip('embeddings unavailable');
     assert(r.status === 200 && Array.isArray(r.json.results), `status ${r.status}`);
     const top = r.json.results[0];
@@ -381,7 +379,6 @@ async function main() {
   });
   await test('POST /v1/search/vector groundWithWeb', async () => {
     const r = await call('/v1/search/vector', { body: { q: 'vector database comparison', k: 5, groundWithWeb: true }, timeoutMs: 45000 });
-    if (r.status === 402) skip('plan has no vector entitlement');
     if (r.status === 503) skip('embeddings unavailable');
     assert(r.status === 200 && Array.isArray(r.json.results), `status ${r.status}`);
     return `${r.json.total} grounded results`;
@@ -390,8 +387,9 @@ async function main() {
   section('Account & keys');
   await test('GET /v1/account', async () => {
     const r = await call('/v1/account');
-    assert(r.status === 200 && r.json.plan, `status ${r.status}`);
-    return `plan=${r.json.plan.id} used=${r.json.usage?.total}`;
+    assert(r.status === 200 && r.json.profile && r.json.usage, `status ${r.status}`);
+    assert(r.json.plan === undefined, 'account should not expose a plan');
+    return `role=${r.json.role} used=${r.json.usage?.total}`;
   });
   await test('GET /v1/account/history', async () => {
     const r = await call('/v1/account/history?limit=5');
@@ -400,10 +398,6 @@ async function main() {
   await test('GET /v1/account/dashboard', async () => {
     const r = await call('/v1/account/dashboard?days=7');
     assert(r.status === 200, `status ${r.status}`);
-  });
-  await test('GET /v1/account/plans', async () => {
-    const r = await call('/v1/account/plans');
-    assert(r.status === 200 && Array.isArray(r.json.plans) && r.json.plans.length >= 5, `status ${r.status}`);
   });
   await test('GET /v1/keys/api', async () => {
     const r = await call('/v1/keys/api');
@@ -563,15 +557,15 @@ async function main() {
     return `finish=${r.json.choices?.[0]?.finish_reason}`;
   });
 
-  section('Trends & Plans');
+  section('Trends');
   await test('GET /v1/trends', async () => {
     const r = await call('/v1/trends');
     assert(r.status === 200, `status ${r.status}`);
     return `${(r.json.trends || r.json.items || []).length ?? 0} trends`;
   });
-  await test('GET /v1/plans', async () => {
+  await test('GET /v1/plans → 404 (billing removed)', async () => {
     const r = await call('/v1/plans');
-    assert(r.status === 200, `status ${r.status}`);
+    assert(r.status === 404, `expected 404, got ${r.status}`);
   });
 
   section('Admin (super-user scope; 403 expected for normal keys)');
@@ -590,16 +584,16 @@ async function main() {
   await test('MCP: initialize → tools/list → call all', async () => {
     const { tools, results } = await callMcp();
     assert(tools.length >= 5, `expected ≥5 tools, got ${tools.length}: ${tools.join(',')}`);
-    // A tool that fails purely on plan entitlement (402/quota) is "gated", not broken —
-    // consistent with how the vector API tests skip on the free plan.
-    const gated = (r: { ok: boolean; note: string }) => !r.ok && /402|quota_exceeded|entitle|plan/i.test(r.note);
+    // A tool that fails only because its backing service is unavailable (503) is
+    // "degraded", not broken — the build has no quotas or entitlements to gate on.
+    const gated = (r: { ok: boolean; note: string }) => !r.ok && /503|unavailable/i.test(r.note);
     for (const r of results) {
       const mark = r.ok ? C.g + '✓' : gated(r) ? C.y + '↷' : C.r + '✗';
       console.log(`      ${mark}${C.x} mcp:${r.name} ${C.dim}${r.note}${C.x}`);
     }
     const broken = results.filter((r) => !r.ok && !gated(r));
     assert(broken.length === 0, `MCP tools failed: ${broken.map((f) => `${f.name} (${f.note})`).join('; ')}`);
-    return `${tools.length} tools — ${results.filter((r) => r.ok).length} ok, ${results.filter(gated).length} plan-gated`;
+    return `${tools.length} tools — ${results.filter((r) => r.ok).length} ok, ${results.filter(gated).length} unavailable`;
   });
 
   section('Error handling');
