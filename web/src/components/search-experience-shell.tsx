@@ -94,20 +94,18 @@ export function SearchExperienceShell({
       }
       const savedEngine = localStorage.getItem(SEARCH_ENGINE_KEY);
       if (savedEngine && !engineParam) setEngineOverrideState(savedEngine);
-      if (signedIn) {
-        const savedTemporary = localStorage.getItem(SEARCH_TEMPORARY_KEY);
-        if (temporaryParam == null) {
-          if (savedTemporary === '1') {
-            setTemporaryState(true);
-          } else {
-            setTemporaryState(false);
-            if (savedTemporary == null) {
-              localStorage.setItem(SEARCH_TEMPORARY_KEY, '0');
-            }
+      // Temporary defaults to off for everyone (persisted in localStorage), so
+      // browser-tier history is recorded by default — incl. anonymous users.
+      const savedTemporary = localStorage.getItem(SEARCH_TEMPORARY_KEY);
+      if (temporaryParam == null) {
+        if (savedTemporary === '1') {
+          setTemporaryState(true);
+        } else {
+          setTemporaryState(false);
+          if (savedTemporary == null) {
+            localStorage.setItem(SEARCH_TEMPORARY_KEY, '0');
           }
         }
-      } else {
-        setTemporaryState(true);
       }
     } catch {
       /* ignore */
@@ -147,20 +145,16 @@ export function SearchExperienceShell({
     }
   }, [engines]);
 
-  const setTemporary = useCallback(
-    (v: boolean) => {
-      if (!signedIn) return;
-      setTemporaryState(v);
-      try {
-        localStorage.setItem(SEARCH_TEMPORARY_KEY, v ? '1' : '0');
-      } catch {
-        /* ignore */
-      }
-    },
-    [signedIn],
-  );
+  const setTemporary = useCallback((v: boolean) => {
+    setTemporaryState(v);
+    try {
+      localStorage.setItem(SEARCH_TEMPORARY_KEY, v ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
-  const effectiveTemporary = signedIn ? temporary : true;
+  const effectiveTemporary = temporary;
 
   const searchCtx = useMemo(
     () => ({

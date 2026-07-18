@@ -50,7 +50,7 @@ export function SearchComposerSettings() {
   const { searchDepth, setSearchDepth, temporary, setTemporary, signedIn } = useSearchExperience();
 
   const temporaryTitle = !signedIn
-    ? 'Sign in to save searches.'
+    ? 'Searches are saved in this browser. Sign in to sync across devices.'
     : temporary
       ? 'This search is not saved.'
       : 'Searches are saved to your account. Click for a temporary search.';

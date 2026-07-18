@@ -60,8 +60,10 @@ export function SearchComposer({
     const nextQ = text.trim();
     if (!nextQ) return;
     const mod = selectedModality;
-    if (signedIn && !temporary && mod !== 'ai') pushRecent(nextQ, mod);
-    if (signedIn && !temporary && mod === 'ai') pushRecent(nextQ, 'ai');
+    // Browser-tier history (localStorage) is the default for everyone, incl.
+    // anonymous users; only the explicit "temporary" toggle opts out. Server
+    // tiers (Redis/S3) are recorded API-side for signed-in users.
+    if (!temporary) pushRecent(nextQ, mod);
     const sp = new URLSearchParams({ q: nextQ, modality: mod });
     if (mod !== 'ai' && searchDepth !== 'low') sp.set('depth', searchDepth);
     if (mod !== 'ai' && engineOverride) sp.set('engine', engineOverride);

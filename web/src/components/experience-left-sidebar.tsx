@@ -302,11 +302,9 @@ function ThreadListItem() {
 function SearchesList({
   activeQ,
   activeModality,
-  signedIn,
 }: {
   activeQ: string;
   activeModality: string;
-  signedIn: boolean;
 }) {
   const router = useRouter();
   const modalityNav = useModalityNavOptional();
@@ -315,15 +313,13 @@ function SearchesList({
   const [visible, setVisible] = useState(PAGE_SIZE);
 
   useEffect(() => {
-    if (!signedIn) {
-      setRecents([]);
-      return;
-    }
+    // Browser-tier history (localStorage) is available to everyone, incl.
+    // anonymous users — signed-in users additionally get the server tiers.
     const sync = () => setRecents(getRecents().filter((r) => !isAiModality(r.modality)));
     sync();
     window.addEventListener('hd-recents', sync);
     return () => window.removeEventListener('hd-recents', sync);
-  }, [signedIn]);
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query) return recents;
@@ -345,9 +341,6 @@ function SearchesList({
     [router, modalityNav],
   );
 
-  if (!signedIn) {
-    return <p className="px-3 pb-1 text-sm text-ink-400">Sign in to save and view search history.</p>;
-  }
   if (filtered.length === 0) {
     return <p className="px-3 pb-1 text-sm text-ink-400">{query ? 'No matching searches.' : 'No recent searches.'}</p>;
   }
@@ -602,7 +595,7 @@ export function ExperienceLeftSidebar({
               </button>
             ) : null}
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <SearchesList activeQ={activeQ} activeModality={activeModality} signedIn={signedIn} />
+              <SearchesList activeQ={activeQ} activeModality={activeModality} />
             </div>
           </CollapsibleSection>
 
