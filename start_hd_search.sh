@@ -2,7 +2,7 @@
 # Run the HD-Search API locally against your already-running infra (hd-redis,
 # hd-db, hd-seaweedfs, transformers-inference). Self-hosted providers (openserp,
 # searxng, crawl4ai) are optional locally — the engine falls back to free public
-# providers (DuckDuckGo, Wikipedia, GDELT, Common Crawl, Ahmia) when they're down.
+# providers (DuckDuckGo, Wikipedia, Common Crawl, Ahmia) when they're down.
 #
 #   ./start_hd_search.sh            # dev server (tsx watch)
 #   ./start_hd_search.sh build      # compiled prod server

@@ -13,7 +13,6 @@ import { openserp } from './search/openserp.js';
 import { searxng } from './search/searxng.js';
 import { duckduckgo } from './search/duckduckgo.js';
 import { wikipedia } from './search/wikipedia.js';
-import { gdelt } from './search/gdelt.js';
 import { commoncrawl } from './search/commoncrawl.js';
 import { wayback } from './search/wayback.js';
 import { maps } from './search/maps.js';
@@ -40,7 +39,6 @@ const SEARCH_PROVIDERS: SearchProvider[] = [
   searxng,
   duckduckgo,
   wikipedia,
-  gdelt,
   maps,
   wayback,
   commoncrawl,

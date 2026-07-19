@@ -131,7 +131,7 @@ export function vectorSnippets(api: string): Snippet[] {
   return set(api, '/v1/search/vector', '{"q":"time series database","namespace":"notes","k":5,"groundWithWeb":true}');
 }
 // Force a specific engine instead of the priority-ordered default. Any id from
-// GET /v1/engines works (free: searxng, openserp, duckduckgo, wikipedia, gdelt,
+// GET /v1/engines works (free: searxng, openserp, duckduckgo, wikipedia,
 // commoncrawl, ahmia; commercial need a key: brave, serpapi, serper, tavily, exa, kagi).
 export function engineSnippets(api: string): Snippet[] {
   return set(api, '/v1/search', '{"q":"vector database","engine":"searxng","modality":"web","limit":10}');

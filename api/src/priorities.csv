@@ -10,7 +10,6 @@ priority,provider_id,enabled
 20,openserp,true
 30,duckduckgo,true
 60,wikipedia,true
-65,gdelt,true
 80,commoncrawl,true
 # --- darkweb ---
 100,ahmia,true

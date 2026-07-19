@@ -10,7 +10,6 @@ Search Provider,OpenSERP,openserp,Self-hosted,No,"Browser-based SERP scraper (Go
 Search Provider,SearXNG,searxng,Self-hosted,No,"Privacy meta-search engine aggregating 50+ upstream engines. Priority 20"
 Search Provider,DuckDuckGo,duckduckgo,Free External,No,Privacy-focused web search. Priority 100
 Search Provider,Wikipedia,wikipedia,Free External,No,Wikipedia article search via MediaWiki API. Priority 200
-Search Provider,GDELT 2.0,gdelt,Free External,No,Real-time global news/event monitoring. Priority 150
 Search Provider,Wayback Machine,wayback,Free External,No,Internet Archive historical snapshots. Priority 300
 Search Provider,Common Crawl,commoncrawl,Free External,No,Petabyte-scale web archive index search. Priority 310
 Search Provider,Brave Search,brave,Commercial,Yes (brave),Web/news/images/videos search API. Priority 220

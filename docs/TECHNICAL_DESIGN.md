@@ -16,7 +16,7 @@ caching, vector search, auth, and the web BFF. Companion docs:
  MCP client ──stdio──▶ mcp/server.ts ──HTTP(sk-hds-)──▶ hd-search-api (Hono, :8791) ──▶ engine     │
  External dev ──HTTP(sk-hds-)──────────────────────────────▶ │            │                         │
                                                               │            ├─ providers (plugins)    │
-                                                              │            │   search: searxng, openserp, duckduckgo, brave, serpapi, serper, tavily, exa, kagi, google_cse, wikipedia, gdelt, commoncrawl
+                                                              │            │   search: searxng, openserp, duckduckgo, brave, serpapi, serper, tavily, exa, kagi, google_cse, wikipedia, commoncrawl
                                                               │            │   darkweb: ahmia (clearnet+Tor), torch (Tor), intelx
                                                               │            │   crawl: crawl4ai, browserless, jina, firecrawl, basic
                                                               │            └─ embeddings: minilm | openai

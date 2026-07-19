@@ -217,7 +217,7 @@ service still answers what it can.
 
 ## D.5 Failure-mode test results (observed)
 
-- GDELT sustained 429 → engine fell through; **news still served by searxng**.
+- A provider sustaining 429 → engine falls through; **news still served by searxng**.
 - Ahmia clearnet block → **Tor onion fallback**; Torch onion via Tor.
 - Provider exception (videos `length` parse) → isolated to that provider, others
   unaffected; now fixed.
