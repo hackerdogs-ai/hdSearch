@@ -43,6 +43,26 @@ async function once(url: string, opts: FetchOpts): Promise<Response> {
   }
 }
 
+/**
+ * Best-effort one-line reason from an error response. Providers report quota and
+ * key problems in the body, so surfacing it turns an opaque status into something
+ * the operator can act on. Never throws; caps length so logs stay readable.
+ */
+async function readErrorDetail(res: Response): Promise<string> {
+  try {
+    const text = (await res.clone().text()).trim();
+    if (!text) return '';
+    try {
+      const j = JSON.parse(text);
+      const msg = j?.message || j?.error?.message || j?.error || j?.detail;
+      if (typeof msg === 'string' && msg) return msg.slice(0, 200);
+    } catch { /* not JSON — fall through to raw text */ }
+    return text.replace(/\s+/g, ' ').slice(0, 200);
+  } catch {
+    return '';
+  }
+}
+
 /** Fetch with retries. Returns the Response (caller reads body). Throws ProviderError. */
 export async function httpFetch(url: string, opts: FetchOpts): Promise<Response> {
   const retries = opts.retries ?? env.providerRetries;
@@ -53,7 +73,16 @@ export async function httpFetch(url: string, opts: FetchOpts): Promise<Response>
       if (res.ok) return res;
       const retryable = RETRYABLE_STATUS.has(res.status);
       if (!retryable || attempt === retries) {
-        throw new ProviderError(opts.provider, `HTTP ${res.status} from ${opts.provider}`, res.status, retryable);
+        // Include the provider's own explanation. Without it a 400 is unactionable:
+        // "HTTP 400 from serper" hides "Not enough credits", which is the one thing
+        // the operator needs to know. Body is read defensively and truncated.
+        const detail = await readErrorDetail(res);
+        throw new ProviderError(
+          opts.provider,
+          `HTTP ${res.status} from ${opts.provider}${detail ? `: ${detail}` : ''}`,
+          res.status,
+          retryable,
+        );
       }
       lastErr = new ProviderError(opts.provider, `HTTP ${res.status}`, res.status, true);
       // honor Retry-After (seconds or HTTP-date) on 429/503 before backing off

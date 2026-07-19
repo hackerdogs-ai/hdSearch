@@ -93,7 +93,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
   let results: Result[] = [];
   let facets: Facet[] = [];
-  let enginesUsed: { engine: string; ok: boolean; count: number; cached: boolean }[] = [];
+  let enginesUsed: { engine: string; ok: boolean; count: number; cached: boolean; error?: string }[] = [];
   let tookMs = 0;
   let error: string | null = null;
 
@@ -153,7 +153,13 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
     ...(engine ? { engine } : {}),
     ...(temporary ? { temporary: '1' } : {}),
   };
-  const noFreeEngine = results.length === 0 && !error && NEEDS_KEY[modality];
+  // Engines that were attempted but failed, with the provider's own reason.
+  const failedEngines = enginesUsed.filter((e) => !e.ok);
+  // "Needs a key" is only true when nothing ran at all. If engines DID run, an
+  // empty result is a provider problem (quota, credits, outage) — telling the user
+  // to add a key they already have sends them the wrong way.
+  const noFreeEngine =
+    results.length === 0 && !error && enginesUsed.length === 0 && NEEDS_KEY[modality];
   const attributions = collectProviderAttributions(
     enginesUsed,
     results.flatMap((r) => [r.source, ...(r.mergedFrom || [])]),
@@ -211,6 +217,25 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
             {results.length === 0 ? (
               <div className="card p-6 text-sm text-ink-600">
                 <p className="font-medium text-ink-900">No results for this type.</p>
+                {failedEngines.length > 0 && (
+                  <div className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-amber-900">
+                    <p className="font-medium">
+                      {failedEngines.length === enginesUsed.length
+                        ? 'Every engine for this modality failed:'
+                        : 'Some engines failed:'}
+                    </p>
+                    <ul className="mt-1 space-y-0.5">
+                      {failedEngines.map((e) => (
+                        <li key={e.engine}>
+                          <code>{e.engine}</code> — {e.error || 'request failed'}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1 text-amber-800">
+                      Check the provider&apos;s quota or credit balance, then retry.
+                    </p>
+                  </div>
+                )}
                 <p className="mt-1 text-ink-500">
                   {noFreeEngine || (modality === 'archive' ? ARCHIVE_HINT : 'Try a different query or modality, or switch to ')}
                   {!noFreeEngine && modality !== 'archive' && (

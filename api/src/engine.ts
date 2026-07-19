@@ -16,6 +16,7 @@ import { getProviderPrefs } from './provider-prefs.js';
 import { dedupe, rankAggregate } from './normalize.js';
 import { computeFacets } from './facets.js';
 import { contextFor } from './keystore.js';
+import { breakerState, recordFailure, recordSuccess } from './provider-breaker.js';
 import {
   resolveSearchCandidates,
   resolveCrawlCandidates,
@@ -49,6 +50,8 @@ interface EngineOutcome {
   count: number;
   ms: number;
   cached: boolean;
+  /** True when the breaker was open and the provider was not called at all. */
+  skipped?: boolean;
   error?: string;
 }
 
@@ -69,7 +72,11 @@ function cacheKeyForSearch(p: SearchProvider, req: SearchRequest, userId?: strin
   return JSON.stringify([p.id, scope, req.q, req.modality, req.limit, req.page, req.country, req.lang, req.freshness, req.safe]);
 }
 
-/** Run one provider through the cache, timing + classifying the outcome. */
+/** Same scoping as the cache: per-user when the provider needs a credential. */
+function breakerScope(p: SearchProvider | CrawlProvider, userId?: string): string {
+  return p.requiresKeys?.length ? userId || 'anon' : 'shared';
+}
+
 async function runSearchProvider(
   p: SearchProvider,
   req: SearchRequest,
@@ -77,6 +84,27 @@ async function runSearchProvider(
   cacheTtlSec: number,
 ): Promise<{ results: NormalizedResult[]; outcome: EngineOutcome }> {
   const t0 = Date.now();
+  const scope = breakerScope(p, userId);
+
+  // A provider that just failed repeatedly is skipped rather than re-tried. In
+  // aggregate mode the request waits for every provider, so without this one dead
+  // engine adds its full timeout to every search — even fully cached ones.
+  const brk = await breakerState(p.id, scope);
+  if (brk.open && !req.noCache) {
+    return {
+      results: [],
+      outcome: {
+        engine: p.id,
+        ok: false,
+        count: 0,
+        ms: 0,
+        cached: false,
+        skipped: true,
+        error: `skipped after repeated failures (retrying in ${brk.retryInSec ?? 60}s): ${brk.reason}`,
+      },
+    };
+  }
+
   try {
     const exec = async () => {
       const ctx = contextFor(userId);
@@ -89,12 +117,14 @@ async function runSearchProvider(
           // Empty provider results are often transient (timeout, rate limit) — don't poison the cache.
           shouldCache: (rows) => rows.length > 0,
         });
+    if (!hit) void recordSuccess(p.id, scope);
     return {
       results: value,
       outcome: { engine: p.id, ok: true, count: value.length, ms: Date.now() - t0, cached: hit },
     };
   } catch (e) {
     log.warn('search provider failed', { provider: p.id, ...errFields(e) });
+    void recordFailure(p.id, scope, e, (e as { status?: number }).status);
     return {
       results: [],
       outcome: { engine: p.id, ok: false, count: 0, ms: Date.now() - t0, cached: false, error: (e as Error).message },
@@ -153,6 +183,13 @@ export async function runSearch(req: SearchRequest, userId?: string): Promise<Se
       ),
     );
     for (const s of settled) {
+      // A provider killed by the soft deadline resolves through the fallback above,
+      // bypassing runSearchProvider's catch — record it here so a chronically slow
+      // engine eventually trips the breaker instead of costing every request.
+      if (s.outcome.error === 'deadline') {
+        const prov = fanout.find((f) => f.id === s.outcome.engine);
+        if (prov) void recordFailure(prov.id, breakerScope(prov, userId), new Error('deadline'));
+      }
       enginesUsed.push(s.outcome);
       results.push(...s.results);
     }
