@@ -20,7 +20,9 @@ export const torch: SearchProvider = {
   defaultPriority: 110,
   modalities: ['darkweb'],
   cacheTtlSec: 1800,
-  docsUrl: 'https://en.wikipedia.org/wiki/Torch_(search_engine)',
+  // Onion-only service with no canonical clearnet page; point at the Tor Project,
+  // which is what a user actually needs to reach it.
+  docsUrl: 'https://www.torproject.org/',
   endpoint: 'GET {TORCH_ONION}/search?query={q}  (requires HDSEARCH_TOR_PROXY)',
   description: 'Classic Tor search engine (onion-only). Requires the Tor proxy; configurable onion address.',
   async search(req: SearchRequest): Promise<NormalizedResult[]> {

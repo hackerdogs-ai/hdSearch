@@ -21,7 +21,7 @@ Because I was tired of paying subscriptions and credits to all these search prov
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![PRs welcome](https://img.shields.io/badge/PRs-welcome-orange)
 
-[Quickstart](#-quickstart-2-minutes) · [Features](#-features) · [API](#-api) · [AI Search](#-ai-search-agentic) · [MCP](#-mcp-server) · [Config](#%EF%B8%8F-configuration) · [Security](#-security--privacy) · [Self-host at scale](#-production--scaling)
+[Quickstart](#-quickstart-2-minutes) · [Features](#-features) · [API](#-api) · [AI Search](#-ai-search-agentic) · [MCP](#-mcp-server) · [Config](#%EF%B8%8F-configuration) · [Security](#-security--privacy) · [Self-host at scale](#-production--scaling) · [Credits](#-built-on-credits--links)
 
 </div>
 
@@ -29,14 +29,14 @@ Because I was tired of paying subscriptions and credits to all these search prov
 
 ## ✨ Features
 
-- **🔎 Meta-search across 20+ engines** — SearXNG, OpenSERP (Google/Yandex/Baidu/Bing), DuckDuckGo, Wikipedia, and more. Prioritized **fallback** (free/self-hosted first) or **aggregate** mode with cross-engine **dedup** and **facets**.
-- **🗂️ 12 modalities** — web, news, images, videos, **maps**, scholar, shopping, code, social, **web archive** (Wayback + Common Crawl), and **darkweb** (Ahmia over Tor).
-- **🕷️ Crawl** — fetch any URL to clean markdown / links / text via self-hosted Crawl4AI + a headless-Chrome fallback for JS pages.
-- **🧠 Vector search + RAG** — index documents (24h TTL) and run semantic KNN via Redis **RediSearch** (HNSW), with a brute-force fallback. Upload your own files → parse → embed → retrieve, with **citations**.
-- **🤖 AI Search (agentic)** — a chat that plans and calls tools (`search`, `maps`, `crawl`, `archive`, `chart`, `weather`, render UI) and streams the answer. Works with **local Ollama (no API key, $0)** or any commercial model you add.
-- **🔌 MCP server** — expose `hd_search`, `hd_crawl`, `hd_vector_search`, `hd_vector_index`, `hd_list_engines` to Claude / any MCP client.
+- **🔎 Meta-search across 20+ engines** — [SearXNG](https://github.com/searxng/searxng), [OpenSERP](https://github.com/karust/openserp) (Google/Yandex/Baidu/Bing), [DuckDuckGo](https://duckduckgo.com), [Wikipedia](https://www.mediawiki.org/wiki/API:REST_API), and more. Prioritized **fallback** (free/self-hosted first) or **aggregate** mode with cross-engine **dedup** and **facets**.
+- **🗂️ 12 modalities** — web, news, images, videos, **maps**, scholar, shopping, code, social, **web archive** ([Wayback](https://archive.org/help/wayback_api.php) + [Common Crawl](https://commoncrawl.org/)), and **darkweb** ([Ahmia](https://github.com/ahmia/ahmia-site) over [Tor](https://www.torproject.org/)).
+- **🕷️ Crawl** — fetch any URL to clean markdown / links / text via self-hosted [Crawl4AI](https://github.com/unclecode/crawl4ai) + a [Browserless](https://github.com/browserless/browserless) headless-Chrome fallback for JS pages.
+- **🧠 Vector search + RAG** — index documents (24h TTL) and run semantic KNN via Redis **[RediSearch](https://github.com/RediSearch/RediSearch)** (HNSW), with a brute-force fallback. Upload your own files → parse → embed → retrieve, with **citations**.
+- **🤖 AI Search (agentic)** — a chat that plans and calls tools (`search`, `maps`, `crawl`, `archive`, `chart`, `weather`, render UI) and streams the answer. Works with **local [Ollama](https://github.com/ollama/ollama) (no API key, $0)** or any commercial model you add.
+- **🔌 [MCP](https://modelcontextprotocol.io) server** — expose `hd_search`, `hd_crawl`, `hd_vector_search`, `hd_vector_index`, `hd_list_engines` to Claude / any MCP client.
 - **🔐 Bring-your-own keys, encrypted** — commercial engine/LLM keys are entered in the UI and stored **AES-256-GCM encrypted** in your DB. Nothing leaves your infra.
-- **📦 Truly self-contained** — one `docker compose up` bundles Postgres, Redis, SeaweedFS, embeddings, and every provider. No accounts, no SaaS, no per-request bills for the aggregator.
+- **📦 Truly self-contained** — one `docker compose up` bundles [Postgres](https://github.com/postgres/postgres)/[TimescaleDB](https://github.com/timescale/timescaledb), [Redis](https://github.com/redis/redis), [SeaweedFS](https://github.com/seaweedfs/seaweedfs), embeddings, and every provider. No accounts, no SaaS, no per-request bills for the aggregator.
 
 ## 🚀 Quickstart (2 minutes)
 
@@ -284,6 +284,75 @@ cd web && npm install && npm run dev        # :3000
 ## 🗺️ Roadmap
 
 - Optional OIDC/SSO on top of local auth · SQLite single-binary mode · more built-in providers · a public benchmark vs SerpAPI.
+
+## 🙏 Built on (credits & links)
+
+hdsearch is an aggregator — almost all the heavy lifting is done by other people's
+work. Everything it bundles, calls, or can be pointed at is listed here. If you find
+hdsearch useful, please star the projects below too.
+
+### Self-hosted engines & crawlers (bundled, no key needed)
+
+| Project | License | What it does here |
+|---|---|---|
+| [SearXNG](https://github.com/searxng/searxng) | AGPL-3.0 | Meta-search across many engines — the default for web/news/images/videos/scholar, and the **only** provider for code & social |
+| [OpenSERP](https://github.com/karust/openserp) | MIT | Scrapes Google / Yandex / Baidu / Bing SERPs without an API key |
+| [Crawl4AI](https://github.com/unclecode/crawl4ai) | Apache-2.0 | Primary crawler — URL → clean LLM-ready markdown |
+| [Browserless](https://github.com/browserless/browserless) | SSPL / commercial | Headless-Chrome fallback for JS-rendered pages, screenshots, PDF |
+| [Firecrawl](https://github.com/firecrawl/firecrawl) | AGPL-3.0 | Optional extra crawler ([opt-in](#optional-self-hosted-firecrawl)) |
+| [Ahmia](https://github.com/ahmia/ahmia-site) | BSD-3-Clause | `.onion` search for the darkweb modality |
+| [Tor](https://gitweb.torproject.org/tor.git) | BSD-3-Clause | SOCKS proxy that reaches `.onion` services |
+| [Photon](https://github.com/komoot/photon) · [Nominatim](https://github.com/osm-search/Nominatim) | Apache-2.0 / GPL-2.0 | Geocoding for the maps modality, over [OpenStreetMap](https://www.openstreetmap.org/copyright) data |
+
+### Datastores & infrastructure (bundled)
+
+| Project | License | Role |
+|---|---|---|
+| [PostgreSQL](https://github.com/postgres/postgres) | PostgreSQL | Users, API keys, encrypted provider keys, model registry, history |
+| [TimescaleDB](https://github.com/timescale/timescaledb) | Apache-2.0 / TSL | Hypertables for usage metrics and search history |
+| [Redis](https://github.com/redis/redis) + [RediSearch](https://github.com/RediSearch/RediSearch) | AGPL-3.0 / RSAL | Result cache, rate limiting, and HNSW vector index |
+| [SeaweedFS](https://github.com/seaweedfs/seaweedfs) | Apache-2.0 | S3-compatible store for crawl archives and uploaded files |
+| [sentence-transformers](https://github.com/UKPLab/sentence-transformers) · [multi-qa-MiniLM-L6-cos-v1](https://huggingface.co/sentence-transformers/multi-qa-MiniLM-L6-cos-v1) | Apache-2.0 | 384-dim embeddings for vector search and RAG |
+| [Ollama](https://github.com/ollama/ollama) | MIT | Local LLMs, so AI Search works with no API key and no bill |
+
+### Free / open data sources (no key)
+
+- [Wikipedia (MediaWiki API)](https://www.mediawiki.org/wiki/API:REST_API) — [Wikimedia Foundation](https://wikimediafoundation.org/)
+- [Common Crawl](https://commoncrawl.org/) — open web-scale crawl archive ([GitHub](https://github.com/commoncrawl))
+- [Internet Archive Wayback Machine](https://archive.org/help/wayback_api.php) — historical captures
+- [DuckDuckGo](https://duckduckgo.com) — Instant Answer / HTML endpoints
+- **Torch** — classic darkweb index; onion-only, reached through [Tor](https://www.torproject.org/)
+
+### Commercial search APIs (optional, bring your own key)
+
+All optional — hdsearch works fully without any of them. Keys are entered in the UI and
+stored AES-256-GCM encrypted; nothing leaves your infrastructure.
+
+| Service | Free tier | Notes |
+|---|---|---|
+| [Brave Search API](https://brave.com/search/api/) | yes | Independent index (not Google-derived) |
+| [Serper](https://serper.dev) | yes | Fast Google SERP; most generous free tier |
+| [SerpApi](https://serpapi.com/search-api) | limited | Broadest engine coverage — shopping, scholar, places |
+| [Tavily](https://docs.tavily.com) | yes | Search built for LLM/RAG pipelines |
+| [Exa](https://docs.exa.ai) | yes | Neural/semantic web search |
+| [Kagi Search API](https://help.kagi.com/kagi/api/search.html) | no | Premium ad-free index |
+| [Google Programmable Search](https://developers.google.com/custom-search/v1/overview) | limited | Official Google CSE |
+| [Jina Reader](https://jina.ai/reader/) | yes | URL → markdown |
+| [Intelligence X](https://intelx.io/product) | no | Darkweb / leak archive |
+
+### Frameworks & libraries
+
+[Hono](https://github.com/honojs/hono) · [Next.js](https://github.com/vercel/next.js) ·
+[React](https://github.com/facebook/react) · [Vercel AI SDK](https://github.com/vercel/ai) ·
+[Model Context Protocol SDK](https://github.com/modelcontextprotocol/typescript-sdk) ·
+[assistant-ui](https://github.com/assistant-ui/assistant-ui) · [Zod](https://github.com/colinhacks/zod) ·
+[ioredis](https://github.com/redis/ioredis) · [node-postgres](https://github.com/brianc/node-postgres) ·
+[Nodemailer](https://github.com/nodemailer/nodemailer) · [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) ·
+[Vitest](https://github.com/vitest-dev/vitest) · [AWS SDK for JavaScript](https://github.com/aws/aws-sdk-js-v3)
+
+> Licences are listed as a convenience and may change — check each project for the
+> authoritative terms. hdsearch runs these as unmodified upstream containers or
+> dependencies; copyleft obligations (AGPL etc.) stay with the projects themselves.
 
 ## 🤝 Contributing
 
