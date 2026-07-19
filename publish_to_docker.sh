@@ -23,6 +23,8 @@
 #
 # OPTIONS
 #   --build-only         Build (load locally); do NOT push to Docker Hub.
+#   --desc-only          Only update the Docker Hub description; build/push nothing.
+#   --no-desc            Skip the Docker Hub description update.
 #   --native             Build only this host's architecture (fast; single-arch).
 #   --platforms <list>   Override platforms (default: linux/amd64,linux/arm64).
 #   --api-only           Only build/push the API image.
@@ -49,7 +51,7 @@ die(){  echo "${RED}✗ $*${NC}" >&2; exit 1; }
 usage(){ sed -n '2,45p' "$0" | sed 's/^# \{0,1\}//'; }
 
 PLATFORMS="linux/amd64,linux/arm64"
-PUSH=1; DO_API=1; DO_WEB=1; NO_CACHE=0; DRY=0; NATIVE=0
+PUSH=1; DO_API=1; DO_WEB=1; NO_CACHE=0; DRY=0; NATIVE=0; DO_DESC=1; DESC_ONLY=0
 ARGS=()
 
 while [ $# -gt 0 ]; do
@@ -61,6 +63,8 @@ while [ $# -gt 0 ]; do
     --web-only)   DO_API=0; shift ;;
     --no-cache)   NO_CACHE=1; shift ;;
     --dry-run)    DRY=1; shift ;;
+    --no-desc)    DO_DESC=0; shift ;;
+    --desc-only)  DESC_ONLY=1; shift ;;
     -h|--help)    usage; exit 0 ;;
     --*)          die "unknown option: $1 (try --help)" ;;
     *)            ARGS+=("$1"); shift ;;
@@ -114,8 +118,82 @@ build_image() {
   ok "$([ $PUSH = 1 ] && echo pushed || echo built) ${NS}/hdsearch:${component}"
 }
 
+# ---- Docker Hub repository description -------------------------------------
+# The Hub "About"/README is set through the Hub REST API, not by `docker push`,
+# so pushing images alone leaves the repo page blank. The long description is
+# generated from README.md at publish time so the two never drift.
+#
+# Needs a Docker Hub Personal Access Token with read/write on the repo:
+#   export DOCKERHUB_USERNAME=<user>
+#   export DOCKERHUB_TOKEN=<PAT>        # https://app.docker.com/settings/personal-access-tokens
+# The token is read from the environment and never printed or stored.
+SHORT_DESC="Self-hosted API for search, crawl, vector search and agentic AI across 20+ engines."
+
+update_description() {
+  local repo="$1"
+  if [ -z "${DOCKERHUB_USERNAME:-}" ] || [ -z "${DOCKERHUB_TOKEN:-}" ]; then
+    warn "skipping description for ${NS}/${repo} — set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to enable"
+    return 0
+  fi
+  [ -f README.md ] || { warn "README.md not found; skipping description"; return 0; }
+
+  info "updating Docker Hub description for ${NS}/${repo}"
+  DH_USER="$DOCKERHUB_USERNAME" DH_TOKEN="$DOCKERHUB_TOKEN" \
+  DH_NS="$NS" DH_REPO="$repo" DH_SHORT="$SHORT_DESC" python3 - <<'PYEOF'
+import json, os, sys, urllib.request, urllib.error
+
+user, token = os.environ["DH_USER"], os.environ["DH_TOKEN"]
+ns, repo     = os.environ["DH_NS"], os.environ["DH_REPO"]
+
+def post(url, payload, headers):
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(),
+                                 headers={"content-type": "application/json", **headers})
+    return json.load(urllib.request.urlopen(req, timeout=30))
+
+def patch(url, payload, headers):
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(),
+                                 headers={"content-type": "application/json", **headers}, method="PATCH")
+    return json.load(urllib.request.urlopen(req, timeout=30))
+
+readme = open("README.md", encoding="utf-8").read()
+# Point Hub readers back at the canonical source before the README body.
+header = (
+    f"> **Source, issues and full documentation: "
+    f"https://github.com/hackerdogs-ai/hdsearch**\n>\n"
+    f"> Images: `{ns}/hdsearch:api` (REST API + MCP server) and `{ns}/hdsearch:web` (Next.js UI). "
+    f"Run them together with the compose files in the repo.\n\n---\n\n"
+)
+full = header + readme
+if len(full) > 25000:                      # Hub caps full_description
+    full = full[:24800].rsplit("\n", 1)[0] + "\n\n…continued at https://github.com/hackerdogs-ai/hdsearch\n"
+
+try:
+    jwt = post("https://hub.docker.com/v2/users/login/", {"username": user, "password": token}, {})["token"]
+except urllib.error.HTTPError as e:
+    print(f"  login failed: HTTP {e.code} — check DOCKERHUB_USERNAME / DOCKERHUB_TOKEN", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    patch(f"https://hub.docker.com/v2/repositories/{ns}/{repo}/",
+          {"description": os.environ["DH_SHORT"], "full_description": full},
+          {"authorization": f"JWT {jwt}"})
+    print(f"  description updated ({len(full)} chars)")
+except urllib.error.HTTPError as e:
+    print(f"  update failed: HTTP {e.code} {e.read()[:200]!r}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+}
+
+if [ "$DESC_ONLY" = 1 ]; then
+  update_description hdsearch
+  ok "Done (description only)."
+  exit 0
+fi
+
 [ "$DO_API" = 1 ] && build_image api ./api ./api/Dockerfile
 [ "$DO_WEB" = 1 ] && build_image web ./web ./web/Dockerfile
+
+if [ "$PUSH" = 1 ] && [ "$DO_DESC" = 1 ]; then update_description hdsearch; fi
 
 echo ""; ok "Done."
 if [ "$PUSH" = 1 ]; then
