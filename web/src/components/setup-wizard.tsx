@@ -178,12 +178,10 @@ export function SetupWizard({ edit = false }: { edit?: boolean }) {
 
       {step === 0 && (
         <div>
-          <h1 className="text-2xl font-bold text-ink-900">Welcome to HD-Search</h1>
+          <h1 className="text-2xl font-bold text-ink-900">Welcome to hdsearch</h1>
           <p className="mt-2 text-sm text-ink-500">
-            Let's connect HD-Search to your infrastructure. Defaults point at the bundled
-            services on <code>hdsearchnet</code> — if you're running the full or infra stack,
-            they'll already be reachable and you can click straight through. Running your own
-            Postgres / Redis / storage? Enter their addresses and we'll verify each one.
+            Connect Postgres, Redis, and storage. Defaults already target the bundled stack on{' '}
+            <code>hdsearchnet</code>.
           </p>
         </div>
       )}
@@ -199,7 +197,7 @@ export function SetupWizard({ edit = false }: { edit?: boolean }) {
       {step === 2 && (
         <div className="space-y-3">
           <h2 className="text-xl font-bold text-ink-900">Search & crawl providers</h2>
-          <p className="text-sm text-ink-500">All optional — HD-Search degrades gracefully if any is unavailable.</p>
+          <p className="text-sm text-ink-500">All optional — hdsearch degrades gracefully if any is unavailable.</p>
           {PROVIDERS.map((k) => <ServiceRow key={k} k={k} />)}
         </div>
       )}
